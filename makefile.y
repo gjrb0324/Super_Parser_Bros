@@ -2,17 +2,43 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-char str[1000];
+
+int yylex();
+void yyerror(const char *s);
+char string[1000];
 %}
-%token FNAME
-
+%union{
+    char *str;
+}
+%parse-param { FILE* fp }
+%token<str> FNAME
+%type<str>files
 %%
 
-statement: FNAME  ':' prerequisites {printf("%s : %s", $1, str);}
-        ;
+statement: files ':' files {printf("Sentence is valid.\n");}
+         ;
 
-prerequisites:  FNAME ' ' prerequisites { strcat(str, " "); }
-             |  FNAME { strcat(str, $1); }
-             ;
+files: FNAME files {strcpy($$, strcat(strcat($1, " "), $2 )); 
+                        }
+     |  FNAME 
+    ;
 
 %%
+int main(int argv, char **argc){
+    FILE *fp;
+    char buffer[100];
+    if ( strcmp(argc[1], "Makefile") ){
+        fprintf(stderr, "Not Makefile!!");
+        exit(1);
+    }
+    fp = fopen(argc[1], "rwx");
+    fread(buffer, sizeof(buffer), 100, fp);
+    printf(" buffer = %s\n", buffer);
+    yyparse(fp);
+    return 0;
+}
+void yyerror(const char *s){
+    printf("Error : %s\n", s);
+    exit(1);
+}
+

@@ -5,7 +5,9 @@
 fname [a-z0-9A-Z]+
 
 %%
-[\t ]+ ;
-{fname} { yylval.str = strdup(yytext); return FNAME;}
-
+[\t ] ;
+{fname} { yylval.str = strdup(yytext); 
+        return FNAME;}
+\n return 0;
+. return yytext[0];
 %%
