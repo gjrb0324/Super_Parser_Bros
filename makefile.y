@@ -6,15 +6,18 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
+typedef struct yy_buffer_state *YY_BUFFER_STATE;
+extern YY_BUFFER_STATE yy_scan_string(const char* str);
+extern YY_BUFFER_STATE yy_scan_buffer(char *, size_t);
+extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
+extern void yy_switch_to_buffer(YY_BUFFER_STATE buffer);
 int yylex();
-void yyerror(const char *s);
-void read_line_fd(int fd);
+void yyerror( const char *s);
 %}
 %union{
     char *str;
 }
-//%parse-param { FILE* fp }
+//%parse-param { char* line }
 %token<str> FNAME
 %type<str>files
 %%
@@ -28,25 +31,28 @@ files: FNAME files {strcpy($$, strcat(strcat($1, " "), $2 ));
     ;
 
 %%
-int main(int argv, char **argc){
-    char buffer[1000];
-    if ( strcmp(argc[1], "Makefile") ){
+int main(int argc, char **argv){
+    char buffer[1024];
+    char *line;
+    if ( strcmp(argv[1], "Makefile") ){
         fprintf(stderr, "Not Makefile!!");
         exit(1);
     }
-    
-    int fd = open(argc[1], O_RDWR);
-    dup2(fd, 0);
-    printf("yyparse begins\n");
-    yyparse();
-    printf("yyparse end\n");
-    close(fd);
+    unsigned int n = 1; 
+    FILE *fp = fopen(argv[1], "r");
+    while ( (line = fgets(buffer,1024, fp)) != NULL) {
+        printf("line %u : %s",n,line);
+        YY_BUFFER_STATE buffer = yy_scan_string(line);
+        yy_switch_to_buffer(buffer);
+        yyparse();
+        yy_delete_buffer(buffer);
+        printf("\n");
+        n++;
+    }
+    fclose(fp);
     return 0;
 }
 void yyerror( const char *s){
     printf("Error : %s\n", s);
     exit(1);
 }
-
-    
-
