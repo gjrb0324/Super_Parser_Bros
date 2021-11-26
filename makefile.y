@@ -23,12 +23,15 @@ void yyerror( const char *s);
 %%
 
 statement: files ':' files {printf("Sentence is valid.\n");}
+         | files ':' {printf("Sentence is valid.\n");}
          ;
 
 files: FNAME files {strcpy($$, strcat(strcat($1, " "), $2 )); 
                         }
-     |  FNAME 
+     |  FNAME
     ;
+
+
 
 %%
 int main(int argc, char **argv){
@@ -42,6 +45,19 @@ int main(int argc, char **argv){
     FILE *fp = fopen(argv[1], "r");
     while ( (line = fgets(buffer,1024, fp)) != NULL) {
         printf("line %u : %s",n,line);
+        if(line[0] == '\n'){
+           n++;
+           continue;
+        }
+        if(line[0] == '\t'){
+            int ret = system(line);
+            if(WEXITSTATUS(ret) == 0)
+                printf("Executable Command\n");
+            else if(WIFSIGNALED(ret))
+                printf("Abnormally Terminated : %d\n", WTERMSIG(ret));
+            n++;
+            continue;
+        }
         YY_BUFFER_STATE buffer = yy_scan_string(line);
         yy_switch_to_buffer(buffer);
         yyparse();

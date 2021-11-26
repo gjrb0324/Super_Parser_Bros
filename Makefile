@@ -1,2 +1,12 @@
-target : file1 file2
-target2 : file3 file2
+main: lex yacc
+	rm -f main
+	cc lex.yy.c y.tab.c -o main -ll -lfl -g
+lex:
+	lex makefile.l
+
+yacc:
+	yacc makefile.y -d
+
+clear:
+	rm y.tab.c lex.yy.c y.tab.h -f
+	rm -f main
