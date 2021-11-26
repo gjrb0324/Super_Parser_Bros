@@ -1,3 +1,13 @@
-t1 : p1 p2
-t2 : p3 p2
-	cc main.c p2 -o p3
+main: lex yacc
+        rm -f main
+        cc lex.yy.c y.tab.c -o main -ll -lfl -g
+
+lex:
+	lex makefile.l
+
+yacc:
+	yacc makefile.y -d
+
+clear:
+	rm y.tab.c lex.yy.c y.tab.h -f
+	rm -f main
