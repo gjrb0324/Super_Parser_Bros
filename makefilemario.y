@@ -18,18 +18,14 @@ void yyerror( const char *s);
     char *str;
 }
 //%parse-param { char* line }
-%token<str> FNAME
-%token<str> EIGHTSPACE
-%token<str> NONTAB
-%token<str> NOCOLON
-%token<str> ANYCHAR
+%token<str> FNAME EIGHTSPACE NONTAB NOCOLON ANYCHAR
 %type<str>files
 %type<str>errors
 %%
 
 statement: files ':' files {printf("Sentence is valid.\n");}
 	 | files ':' {printf("Sentence is valid.\n");}
-	 | errors
+	 | errors statement
 	 ;
          
 	 /* Now for the error handling which is not ordinary parsing error*/
@@ -52,7 +48,7 @@ int main(int argc, char **argv){
     char buffer[1024];
     char *line;
     if ( strcmp(argv[1], "Makefile") ){
-        fprintf(stderr, "Not Makefile!!");
+        fprintf(stderr, "Not Makefile!!\n");
         exit(1);
     }
     unsigned int n = 1; 

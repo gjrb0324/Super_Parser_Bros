@@ -1,5 +1,5 @@
 main: lex yacc
-        rm -f main
+	rm -f main
 	cc lex.yy.c y.tab.c -o main -ll -lfl -g
 
 lex:
@@ -7,7 +7,7 @@ lex:
 
 yacc:
 	yacc makefilemario.y -d
-
+	
 clear:
 	rm y.tab.c lex.yy.c y.tab.h -f
 	rm -f main
