@@ -22,27 +22,30 @@ void yyerror( const char *s);
 %token<str> EIGHTSPACE
 %token<str> NONTAB
 %token<str> NOCOLON
-%token<str> SPACE
+%token<str> ANYCHAR
 %type<str>files
+%type<str>errors
 %%
 
 statement: files ':' files {printf("Sentence is valid.\n");}
 	 | files ':' {printf("Sentence is valid.\n");}
+	 | errors
 	 ;
-         /* Now for the error handling which is not ordinary parsing error*/
+         
+	 /* Now for the error handling which is not ordinary parsing error*/
 	 /* This is a error when using 8 spaces instead of tab */
-errors: NONTAB EIGHTSPACE {printf("missing separator (did you mean TAB instead of 8 spaces?). Stop\n"); exit(1);}
-	/* This is commands commence before first target error */
-	| '\n' SPACE {printf("commands commence before first target. Stop\n"); exit(1);}
-	| '\n' NOCOLON {printf("commands commence before first target. Stop\n"); exit(1);}
-	/* This is no targets error */
-	| ':' {printf("No targets. Stop\n"), exit(1);}
-	;
+errors: EIGHTSPACE ANYCHAR {printf("missing separator (did you mean TAB instead of 8 spaces?).\n");}
+	 /* This is commands commence before first target error */
+	 | NOCOLON '\n' ':' {printf("commands commence before first target.\n");}
+	 /* This is no targets error */
+	 | ':' {printf("No targets.\n");}
+	 ;
 
 files: FNAME files {strcpy($$, strcat(strcat($1, " "), $2 )); 
                         }
      |  FNAME 
     ;
+
 
 %%
 int main(int argc, char **argv){
@@ -82,8 +85,7 @@ int main(int argc, char **argv){
 
 void yyerror( const char *s){
     /* This is the error part when the ordinary parsing fails*/
-    printf("Missing separator. Stop\n");
-    exit(1);
+    printf("Missing separator.\n");
 }
 
 int yywrap(){return 1;}
