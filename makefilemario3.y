@@ -12,6 +12,7 @@ extern YY_BUFFER_STATE yy_scan_buffer(char *, size_t);
 extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
 extern void yy_switch_to_buffer(YY_BUFFER_STATE buffer);
 int yylex();
+int errno = 0;
 void yyerror( const char *s);
 %}
 %union{
@@ -30,11 +31,11 @@ statement: files ':' files {printf("Sentence is valid.\n");}
          
 	 /* Now for the error handling which is not ordinary parsing error*/
 	 /* This is a error when using 8 spaces instead of tab */
-errors: EIGHTSPACE {printf("missing separator (did you mean TAB instead of 8 spaces?).\n");}
+errors: EIGHTSPACE {printf("missing separator (did you mean TAB instead of 8 spaces?).\n"); errno++;}
 	 /* This is commands commence before first target error */
-	 | COMMANDSBEFORE {printf("commands commence before first target.\n");}
+	 | COMMANDSBEFORE {printf("commands commence before first target.\n"); errno++;}
 	 /* This is no targets error */
-	 | NOTARGETS {printf("No targets.\n");}
+	 | NOTARGETS {printf("No targets.\n"); errno++;}
 	 ;
 
 files: FNAME files {strcpy($$, strcat(strcat($1, " "), $2 )); 
@@ -80,8 +81,12 @@ int main(int argc, char **argv){
 }
 
 void yyerror( const char *s){
+    
+    if(errno == 0){
     /* This is the error part when the ordinary parsing fails*/
     printf("Missing separator.\n");
+    }
+    errno = 0;
 }
 
 int yywrap(){return 1;}
