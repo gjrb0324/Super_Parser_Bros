@@ -12,7 +12,7 @@ extern YY_BUFFER_STATE yy_scan_buffer(char *, size_t);
 extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
 extern void yy_switch_to_buffer(YY_BUFFER_STATE buffer);
 int yylex();
-int errno = 0;
+int errno = 0; // To check whether the error occured in the rules section
 void yyerror( const char *s);
 %}
 %union{
@@ -36,6 +36,12 @@ errors: EIGHTSPACE {printf("missing separator (did you mean TAB instead of 8 spa
 	 | COMMANDSBEFORE {printf("commands commence before first target.\n"); errno++;}
 	 /* This is no targets error */
 	 | NOTARGETS {printf("No targets.\n"); errno++;}
+	 /* No rule to make target 'xxx', needed by 'yyy' */
+	 /* Warning: overriding recipie for target 'xxx' */
+	 /* Circular xxx <- yyy dependency dropped */
+	 /* Recursive variable 'xxx' references itself (eventually). */
+	 /* Unterminated variable reference. */
+	 /* insufficient arguments to function 'xxx'. */
 	 ;
 
 files: FNAME files {strcpy($$, strcat(strcat($1, " "), $2 )); 
@@ -48,8 +54,12 @@ files: FNAME files {strcpy($$, strcat(strcat($1, " "), $2 ));
 int main(int argc, char **argv){
     char buffer[1024];
     char *line;
+//    if ( argc == 0 ){
+//    	fprintf(stderr, "Usage: ./main Makefile\n");
+//	exit(1);
+//    }
     if ( strcmp(argv[1], "Makefile") ){
-        fprintf(stderr, "Not Makefile!!\n");
+        fprintf(stderr, "Makefile '%s' was not found\n", argv[1]);
         exit(1);
     }
     unsigned int n = 1; 
