@@ -18,7 +18,7 @@ void yyerror( const char *s);
     char *str;
 }
 //%parse-param { char* line }
-%token<str> FNAME EIGHTSPACE NONTAB NOCOLON ANYCHAR
+%token<str> FNAME EIGHTSPACE COMMANDSBEFORE NOTARGETS
 %type<str>files
 %type<str>errors
 %%
@@ -30,11 +30,11 @@ statement: files ':' files {printf("Sentence is valid.\n");}
          
 	 /* Now for the error handling which is not ordinary parsing error*/
 	 /* This is a error when using 8 spaces instead of tab */
-errors: EIGHTSPACE ANYCHAR {printf("missing separator (did you mean TAB instead of 8 spaces?).\n");}
+errors: EIGHTSPACE {printf("missing separator (did you mean TAB instead of 8 spaces?).\n");}
 	 /* This is commands commence before first target error */
-	 | NOCOLON '\n' ':' {printf("commands commence before first target.\n");}
+	 | COMMANDSBEFORE {printf("commands commence before first target.\n");}
 	 /* This is no targets error */
-	 | ':' ANYCHAR {printf("No targets.\n");}
+	 | NOTARGETS {printf("No targets.\n");}
 	 ;
 
 files: FNAME files {strcpy($$, strcat(strcat($1, " "), $2 )); 

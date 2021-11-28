@@ -24,17 +24,17 @@ void yyerror( const char *s);
 %%
 
 statement: files ':' files {printf("Sentence is valid.\n");}
-	 | files ':' {printf("Sentence is valid.\n");}
+	 //| files ':' {printf("Sentence is valid.\n");}
 	 | errors
 	 ;
          
 	 /* Now for the error handling which is not ordinary parsing error*/
 	 /* This is a error when using 8 spaces instead of tab */
-errors: EIGHTSPACE ANYCHAR {printf("missing separator (did you mean TAB instead of 8 spaces?).\n");}
+errors: EIGHTSPACE ANYCHAR {errno = NOTAB_EIGHTSPACE;}
 	 /* This is commands commence before first target error */
-	 | NOCOLON '\n' ':' {printf("commands commence before first target.\n");}
+	 | NOCOLON '\n' ':' {errno = COMMAND_BEFORE;}
 	 /* This is no targets error */
-	 | ':' ANYCHAR {printf("No targets.\n");}
+	 | ':' {errno = NO_TARGETS;}
 	 ;
 
 files: FNAME files {strcpy($$, strcat(strcat($1, " "), $2 )); 
@@ -80,8 +80,19 @@ int main(int argc, char **argv){
 }
 
 void yyerror( const char *s){
-    /* This is the error part when the ordinary parsing fails*/
-    printf("Missing separator.\n");
+    
+	/* using 8 spaces instead of tab */
+	if(errno == NOTAB_EIGHTSPACE)
+		printf("Missing separator (did you mean TAB instead of 8 spaces?).\n");
+	/* Commands commence before first target error */
+	else if(errno == COMMAND_BEFORE)
+		printf("Commands commence before first target.\n");
+	/* No targets error */
+	else if(errno == NO_TARGETS)
+		printf("No targets.\n");
+	/* This is the error part when the ordinary parsing fails*/
+	else
+		printf("Missing separator.\n");
 }
 
 int yywrap(){return 1;}
