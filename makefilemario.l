@@ -3,7 +3,7 @@
 #include <string.h>
 %}
 fname [a-z0-9A-Z][a-zA-Z0-9_.]+
-commandline [a-z0-9A-Z-]+
+commandline [a-z0-9A-Z_.-]+
 anychar [a-z0-9A-Z ]+
 eightspace ^"        "
 newline "\n"
@@ -15,12 +15,11 @@ newline "\n"
 . return yytext[0];
 {commandline}	{yylval.str = strdup(yytext);
 		return COMMANDLINE;}
+[#]{anychar}		{return REMARK;}
 
 
 {eightspace} 				{ yylval.str = strdup(yytext);
 					return EIGHTSPACE;}
-{commandline}{newline}{anychar}[:]	{ yylval.str = strdup(yytext);
-					return COMMANDSBEFORE;}
 ^[:]{anychar}				{yylval.str = strdup(yytext);
 					return NOTARGETS;}
 ^[\t][\t ]+				{return NORULES;}

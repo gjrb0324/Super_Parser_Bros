@@ -20,7 +20,7 @@ void yyerror( const char *s);
     char *str;
 }
 //%parse-param { char* line }
-%token<str> FNAME COMMANDLINE EIGHTSPACE COMMANDSBEFORE NOTARGETS NORULES
+%token<str> FNAME COMMANDLINE REMARK EIGHTSPACE NOTARGETS NORULES
 %type<str>files
 %type<str>commands
 %type<str>targeterrors
@@ -29,29 +29,28 @@ void yyerror( const char *s);
 statement:
 	 | files ':' files {printf("Target line is valid.\n");}
 	 | files ':' {printf("Target line is valid.\n");}
-	 | commands {printf("Command line is valid.\n");}
+	 | '\t' commands {printf("Command line is valid.\n");}
+	 | REMARK  {printf("This line contains remark.\n");}
 	 | targeterrors
 	 | commanderrors
 	 ;
          
-	 /* Now for the error handling which is not ordinary parsing error*/
-	 /* This is a error when using 8 spaces instead of tab */
-targeterrors: EIGHTSPACE {printf("missing separator (did you mean TAB instead of 8 spaces?).\n"); errno++;}
-	 /* This is commands commence before first target error */
-	 | COMMANDSBEFORE {printf("commands commence before first target.\n"); errno++;}
-	 /* This is no targets error */
-	 | NOTARGETS {printf("No targets.\n"); errno++;}
-	 /* No rule to make target 'xxx'*/
-	 | files ':' NORULES {printf("No rule to make target %s\n", $$); errno++;}
-	 /* Warning: overriding recipie for target 'xxx' */
-	 /* Circular xxx <- yyy dependency dropped */
+	    /* Now for the error handling which is not ordinary parsing error*/
+	    /* In here, it handles the error usually occurs in the target line */
+	    /* This is commands commence before first target error */
+targeterrors: commands {printf("commands commence before first target.\n"); errno++;}
+	    /* This is no targets error */
+	    | NOTARGETS {printf("no targets.\n"); errno++;}
 	 /* Recursive variable 'xxx' references itself (eventually). */
-	 /* This can be do in here */
 	 /* Unterminated variable reference. */
 	 /* insufficient arguments to function 'xxx'. */
 	 ;
 
+	/* This is the error handling which usually occurs in the command line */
+	/* This is the error when using 8 spaces instead of tab */
 commanderrors: EIGHTSPACE {printf("missing separator (did you mean TAB instead of 8 spaces?).\n"); errno++;}
+	     /* When there is no rule to make the target */
+	     | NORULES {printf("No rule to make target\n"); errno++;}
 
 files: FNAME files {strcpy($$, strcat(strcat($1, " "), $2 )); 
                         }
