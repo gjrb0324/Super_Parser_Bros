@@ -12,9 +12,9 @@ clear:
 	rm y.tab.c lex.yy.c y.tab.h -f
 	rm -f main
 asdf: #what
-        
+#commandcommencebeforefirsttarget-        
 #rm good -adsdf
-asdf:
-asdfasdf
-: sdfgsdafg
-asdfasdf
+#asdf:
+#asdfasdf
+#: sdfgsdafg
+#asdfasdf

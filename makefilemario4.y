@@ -65,14 +65,17 @@ commands: COMMANDLINE commands {strcpy($$, strcat(strcat($1, " "), $2 ));}
 int main(int argc, char **argv){
     char buffer[1024];
     char *line;
-//    if ( argc == 0 ){
-//    	fprintf(stderr, "Usage: ./main Makefile\n");
-//	exit(1);
-//    }
-    if ( strcmp(argv[1], "Makefile") ){
+
+    /* In here, we check whether the correct value came in */
+    if ( argc == 1 ){
+    	fprintf(stderr, "Usage: ./main Makefile\n");
+	exit(1);
+    } else if ( strcmp(argv[1], "Makefile") ){
         fprintf(stderr, "Makefile '%s' was not found\n", argv[1]);
         exit(1);
     }
+
+    /* Now it starts the parsing */
     unsigned int n = 1; 
     FILE *fp = fopen(argv[1], "r");
     while ( (line = fgets(buffer,1024, fp)) != NULL) {
@@ -101,6 +104,7 @@ int main(int argc, char **argv){
     return 0;
 }
 
+/* General Error Handling + Error correction */
 void yyerror( const char *s){
     
     if(errno == 0){
