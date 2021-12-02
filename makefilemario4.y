@@ -20,23 +20,21 @@ void yyerror( const char *s);
     char *str;
 }
 //%parse-param { char* line }
-%token<str> FNAME COMMANDLINE REMARK ANYCHAR EIGHTSPACE NOTARGETS NORULES
-%type<str> statement targeterrors commanderrors remarkstate targetline files prerequisites commands remarks
+%token<str> FNAME REMARK EIGHTSPACE NOTARGETS
+%type<str> statement /*targeterrors*/ commanderrors remarkline targetline files prerequisites remarks
 %%
 
 // Valid state handling
 statement: targetline		// Go to the target line handling
-	 | remarkstate		// Go to the remark handling
-	 | targeterrors		// Go to the target error handling
+	 | remarkline		// Go to the remark handling
+//	 | targeterrors		// Go to the target error handling
 	 | commanderrors	// Go to the command error handling
 	 ;
          
 	    /* Now for the error handling which is not ordinary parsing error*/
 	    /* In here, it handles the error usually occurs in the target line */
 	    /* This is commands commence before first target error */
-targeterrors: commands {printf("commands commence before first target.\n"); errno="A"; yyerror(errno);}
-	    /* This is no targets error */
-	    | NOTARGETS {printf("no targets.\n"); errno="B"; yyerror(errno);}
+//targeterrors: asdf {printf("commands commence before first target.\n"); errno="A"; yyerror(errno);}
 	    /* Recursive variable 'xxx' references itself (eventually). */
 	    /* Unterminated variable reference. */
 	    /* insufficient arguments to function 'xxx'. */
@@ -46,29 +44,27 @@ targeterrors: commands {printf("commands commence before first target.\n"); errn
 	     /* This is the error when using 8 spaces instead of tab */
 commanderrors: EIGHTSPACE {printf("missing separator (did you mean TAB instead of 8 spaces?).\n"); errno="C"; yyerror(errno);}
 	     /* When there is no rule to make the target */
-	     | NORULES {printf("No rule to make target\n"); errno="D"; yyerror(errno);}
+	     | prerequisites {printf("No rule to make target\n"); errno="D"; yyerror(errno);}
 	     ;
 
-remarkstate: remarks {printf("This line contains remarks.\n");}
+remarkline: remarks {printf("This line contains remarks.\n");}
 	   | targetline remarks {printf("Target line contains remarks.\n");}
 	   ;
 
 targetline: files ':' prerequisites {printf("Target line exists with prerequisite(s).\n"); isitcommand=1;}
 	  | files ':' {printf("Target line is valid.\n"); isitcommand=1;}
-//	  | files ' ' 
+	  /* No targets error */
+	  | ':' files {printf("No targets.\n"); errno="B"; yyerror(errno);}
+	  | ':' {printf("No targets.\n"); errno= "B", yyerror(errno);}
 	  ;
+
+prerequisites: files '|' files
+	     | files
+	     ;
 
 files: FNAME files {strcpy($$, strcat(strcat($1, " "), $2));}
      | FNAME 
      ;
-
-prerequisites: ANYCHAR '|' ANYCHAR 
-	     | ANYCHAR
-	     ;
-
-commands: COMMANDLINE commands {strcpy($$, strcat($1, $2));}
-	| COMMANDLINE
-	;
 
 remarks: REMARK remarks {strcpy($$, strcat($1, $2));}
        | REMARK
