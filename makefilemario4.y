@@ -12,55 +12,67 @@ extern YY_BUFFER_STATE yy_scan_buffer(char *, size_t);
 extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
 extern void yy_switch_to_buffer(YY_BUFFER_STATE buffer);
 int yylex();
-int targetvalue = 0; // To check whether the target existed before command section
-int errno = 0; // To check whether the error occured in the rules section
+static char *errno = "X"; // To check whether the error occured in the rules section
+static int isitcommand = 0; // To check whether we are in the command line
 void yyerror( const char *s);
 %}
 %union{
     char *str;
 }
 //%parse-param { char* line }
-%token<str> FNAME COMMANDLINE REMARK EIGHTSPACE NOTARGETS NORULES
-%type<str>files
-%type<str>commands
-%type<str>targeterrors
+%token<str> FNAME COMMANDLINE REMARK ANYCHAR EIGHTSPACE NOTARGETS NORULES
+%type<str> statement targeterrors commanderrors remarkstate targetline files prerequisites commands remarks
 %%
 
-statement:
-	 | files ':' files {printf("Target line is valid.\n");}
-	 | files ':' {printf("Target line is valid.\n");}
-	 | '\t' commands {printf("Command line is valid.\n");}
-	 | REMARK  {printf("This line contains remark.\n");}
-	 | targeterrors
-	 | commanderrors
+// Valid state handling
+statement: targetline		// Go to the target line handling
+	 | remarkstate		// Go to the remark handling
+	 | targeterrors		// Go to the target error handling
+	 | commanderrors	// Go to the command error handling
 	 ;
          
 	    /* Now for the error handling which is not ordinary parsing error*/
 	    /* In here, it handles the error usually occurs in the target line */
 	    /* This is commands commence before first target error */
-targeterrors: commands {printf("commands commence before first target.\n"); errno++;}
+targeterrors: commands {printf("commands commence before first target.\n"); errno="A"; yyerror(errno);}
 	    /* This is no targets error */
-	    | NOTARGETS {printf("no targets.\n"); errno++;}
-	 /* Recursive variable 'xxx' references itself (eventually). */
-	 /* Unterminated variable reference. */
-	 /* insufficient arguments to function 'xxx'. */
-	 ;
+	    | NOTARGETS {printf("no targets.\n"); errno="B"; yyerror(errno);}
+	    /* Recursive variable 'xxx' references itself (eventually). */
+	    /* Unterminated variable reference. */
+	    /* insufficient arguments to function 'xxx'. */
+	    ;
 
-	/* This is the error handling which usually occurs in the command line */
-	/* This is the error when using 8 spaces instead of tab */
-commanderrors: EIGHTSPACE {printf("missing separator (did you mean TAB instead of 8 spaces?).\n"); errno++;}
+	     /* This is the error handling which usually occurs in the command line */
+	     /* This is the error when using 8 spaces instead of tab */
+commanderrors: EIGHTSPACE {printf("missing separator (did you mean TAB instead of 8 spaces?).\n"); errno="C"; yyerror(errno);}
 	     /* When there is no rule to make the target */
-	     | NORULES {printf("No rule to make target\n"); errno++;}
+	     | NORULES {printf("No rule to make target\n"); errno="D"; yyerror(errno);}
+	     ;
 
-files: FNAME files {strcpy($$, strcat(strcat($1, " "), $2 )); 
-                        }
-     |  FNAME 
-    ;
+remarkstate: remarks {printf("This line contains remarks.\n");}
+	   | targetline remarks {printf("Target line contains remarks.\n");}
+	   ;
 
-commands: COMMANDLINE commands {strcpy($$, strcat(strcat($1, " "), $2 ));}
+targetline: files ':' prerequisites {printf("Target line exists with prerequisite(s).\n"); isitcommand=1;}
+	  | files ':' {printf("Target line is valid.\n"); isitcommand=1;}
+//	  | files ' ' 
+	  ;
+
+files: FNAME files {strcpy($$, strcat(strcat($1, " "), $2));}
+     | FNAME 
+     ;
+
+prerequisites: ANYCHAR '|' ANYCHAR 
+	     | ANYCHAR
+	     ;
+
+commands: COMMANDLINE commands {strcpy($$, strcat($1, $2));}
 	| COMMANDLINE
 	;
 
+remarks: REMARK remarks {strcpy($$, strcat($1, $2));}
+       | REMARK
+       ;
 %%
 int main(int argc, char **argv){
     char buffer[1024];
@@ -107,11 +119,28 @@ int main(int argc, char **argv){
 /* General Error Handling + Error correction */
 void yyerror( const char *s){
     
-    if(errno == 0){
+    if(errno == "X"){
     /* This is the error part when the ordinary parsing fails*/
     printf("Missing separator.\n");
     }
-    errno = 0;
+    
+    /* This is the part where error correction holds */
+    if(errno == "A"){
+	printf("Please check whether you correctly put your command line.\n");
+    }
+
+    if(errno == "B"){
+        printf("Please put the target before \":\" line.\n");
+    }
+
+    if(errno == "C"){
+    	printf("Please use TAB in the beginning of command line.\n");
+    }
+    
+    if(errno == "D"){
+	printf("Please put the recipie to make the target.\n");
+    }
+    errno = "X";
 }
 
 int yywrap(){return 1;}

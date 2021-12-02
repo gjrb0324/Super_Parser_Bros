@@ -1,8 +1,8 @@
-main: lex yacc
-	rm -f main
+main : lex yacc # AAAA AAAA
+	rm -f main	# Yahoo YAHOO
 	cc lex.yy.c y.tab.c -o main -ll -lfl -g
 	
-lex:
+lex :
 	lex makefilemario.l
 
 yacc:
@@ -12,9 +12,10 @@ clear:
 	rm y.tab.c lex.yy.c y.tab.h -f
 	rm -f main
 asdf: #what
-#commandcommencebeforefirsttarget-        
+#command c o m m e n cebeforefirsttarget-  asdf      
 #rm good -adsdf
 #asdf:
 #asdfasdf
 #: sdfgsdafg
 #asdfasdf
+         

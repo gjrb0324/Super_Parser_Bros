@@ -4,7 +4,7 @@
 %}
 fname [a-z0-9A-Z][a-zA-Z0-9_.]+
 commandline [a-z0-9A-Z_.-]+
-anychar [a-z0-9A-Z ]+
+anychar [a-z0-9A-Z]+
 anyline [a-z0-9A-Z_.: -]+
 eightspace ^"        "
 newline "\n"
@@ -18,11 +18,11 @@ newline "\n"
 			return COMMANDLINE;}
 [#]{anyline}+		{return REMARK;}
 [\t ][#]{anyline}+	{return REMARK;}
+{anychar}		{return ANYCHAR;}
 
-
-{eightspace} 				{ yylval.str = strdup(yytext);
+{eightspace}				{ yylval.str = strdup(yytext);
 					return EIGHTSPACE;}
 ^[:]{anychar}				{yylval.str = strdup(yytext);
 					return NOTARGETS;}
-^[\t][\t ]+				{return NORULES;}
+^[\t]{commandline}			{return NORULES;}
 %%
