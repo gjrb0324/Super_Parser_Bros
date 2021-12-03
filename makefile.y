@@ -14,23 +14,22 @@ extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
 extern void yy_switch_to_buffer(YY_BUFFER_STATE buffer);
 int yylex();
 static char *errno = "X"; // To check whether the error occured in the rules section
-static int isitcommand = 0; // To check whether we are in the command line
 void yyerror( const char *s);
 %}
 %union{
     char *str;
 }
 //%parse-param { char* line }
-%token<str> FNAME REMARK EIGHTSPACE NOTARGETS ANYLINE FLAG
+%token<str> FNAME REMARK EIGHTSPACE NOTARGETS FLAG
 %type<str> statement macroline /*targeterrors*/ commanderrors remarkline targetline files prerequisites remarks
 %%
 
 // Valid state handling
 statement: targetline		// Go to the target line handling
-     | macroline
 	 | remarkline		// Go to the remark handling
 //	 | targeterrors		// Go to the target error handling
 	 | commanderrors	// Go to the command error handling
+     | macroline
 	 ;
          
 	    /* Now for the error handling which is not ordinary parsing error*/
@@ -43,11 +42,9 @@ statement: targetline		// Go to the target line handling
 
 macroline: FNAME '=' FLAG {
                             setenv($1,$3,1);
-                            printf("%s\n",getenv($1));
                             }
         | FNAME '=' files {
                             setenv($1,$3,1);
-                            printf("%s\n", getenv($1));
                             }
 
         ;
@@ -55,34 +52,34 @@ macroline: FNAME '=' FLAG {
 
 	     /* This is the error handling which usually occurs in the command line */
 	     /* This is the error when using 8 spaces instead of tab */
-commanderrors: EIGHTSPACE {printf("Are you trying to trick me just using eight spaces?\n");}
+commanderrors: EIGHTSPACE {printf("Are you trying to trick me just using eight spaces?\n\n");}
 	     | EIGHTSPACE prerequisites {printf("missing separator (did you mean TAB instead of 8 spaces?).\n"); errno="C"; yyerror(errno);}
 	     /* When there is no rule to make the target */
-	     | prerequisites {printf("No rule to make target\n"); errno="D"; yyerror(errno);}
+	     | prerequisites {printf("No rule to make target\n"); printf("%s\n",$1); errno="D"; yyerror(errno);}
 	     | prerequisites '-' prerequisites {printf("No rule to make target\n"); errno="D"; yyerror(errno);}
 	     ;
 
-remarkline: remarks {printf("This line contains remarks.\n");}
-	   | targetline remarks {printf("Target line contains remarks.\n");}
+remarkline: remarks {printf("This line contains remarks.\n\n");}
+	   | targetline remarks {printf("Target line contains remarks.\n\n");}
 	   ;
 
-targetline: files ':' prerequisites {printf("Target line exists with prerequisite(s).\n"); isitcommand=1;}
-	  | files ':' {printf("Target line is valid.\n"); isitcommand=1;}
-	  /* No targets error */
+targetline: files ':' prerequisites {printf("Target line exists with prerequisite(s).\n\n");}
+	  | files ':' {printf("Target line is valid.\n\n");}
+	  /* No targets errori */
 	  | ':' files {printf("No targets.\n"); errno="B"; yyerror(errno);}
 	  | ':' {printf("No targets.\n"); errno= "B", yyerror(errno);}
 	  ;
 
 prerequisites: files '|' files
-	     | files
+         | files
 	     ;
 
-files: FNAME files {strcpy($$, strcat(strcat($1, " "), $2));
-                    printf("%s\n",$$);}
-     | FNAME 
+
+files: FNAME files
+     | FNAME
      ;
 
-remarks: REMARK remarks {strcpy($$, strcat($1, $2));}
+remarks: REMARK remarks
        | REMARK
        ;
 %%
@@ -112,11 +109,11 @@ int main(int argc, char **argv){
         }
     }
     while ( (line = fgets(buffer,1024, fp)) != NULL) {
-        printf("line %u : %s",n,line);
 	if(line[0] == '\n'){
 		n++;
 		continue;
 	}
+    printf("line %u : %s",n,line);
 	if(line[0] == '\t'){
         char n_line[BUFSIZ]="\0";
         line = strtok(line, "\t");
@@ -138,7 +135,6 @@ int main(int argc, char **argv){
                     }
                     
                     newtok[n] = '\0';
-                    printf("%s\n",getenv(newtok));
                     strcat(n_line, getenv(newtok));
                 }
                 //Current target
@@ -168,16 +164,19 @@ int main(int argc, char **argv){
             tok= strtok(NULL, " ");    
         }
 		int ret = system(n_line);
+        printf("\n");
 		if(WEXITSTATUS(ret) == 0)
-			printf("Executable Command\n");
+			printf("Executable Command\n\n");
 		else if(WIFSIGNALED(ret))
-			printf("Abnormally Terminated : %d\n", WTERMSIG(ret));
+			printf("Abnormally Terminated : %d\n\n", WTERMSIG(ret));
 		n++;
 		continue;
 	}
     //target line
     else if(strstr(line, ":") != NULL) {
-        strcpy(target, strtok(line, ":"));
+        char cpy_line[BUFSIZ]= "\0";
+        strcpy(cpy_line, line);
+        strcpy(target, strtok(cpy_line, ":"));
         char *ptr = strtok(NULL, " ");
         size=0;
         int i=0;
@@ -209,24 +208,24 @@ void yyerror( const char *s){
     
     if(errno == "X"){
     /* This is the error part when the ordinary parsing fails*/
-    printf("Missing separator.\n");
+    printf("Missing separator.\n\n");
     }
     
     /* This is the part where error correction holds */
     if(errno == "A"){
-	printf("Please check whether you correctly put your command line.\n");
+	printf("Please check whether you correctly put your command line.\n\n");
     }
 
     if(errno == "B"){
-        printf("Please put the target before \":\" line.\n");
+        printf("Please put the target before \":\" line.\n\n");
     }
 
     if(errno == "C"){
-    	printf("Please use TAB in the beginning of command line.\n");
+    	printf("Please use TAB in the beginning of command line.\n\n");
     }
     
     if(errno == "D"){
-	printf("Please put the recipie to make the target.\n");
+	printf("Please put the recipie to make the target.\n\n");
     }
     errno = "X";
 }

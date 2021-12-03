@@ -4,7 +4,7 @@
 %}
 fname [a-z0-9A-Z][a-zA-Z0-9_.]+
 anychar [a-z0-9A-Z]+
-anyline [a-z0-9A-Z_.: -]+
+anyline [a-z0-9A-Z_.: -=]+
 eightspace ^"        "
 newline "\n"
 %%
