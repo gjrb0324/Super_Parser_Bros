@@ -1,21 +1,19 @@
-main : lex yacc 
-	rm -f main	# Yahoo YAHOO
-	cc lex.yy.c y.tab.c -o main -ll -lfl -g
-	
-lex :
-	lex makefilemario.l 
+CC=gcc
+CFLAGS=-g -Wall -std=c99 -fopenmp -pthread
+LDFLAGS=-fopenmp -lm
 
-yacc: 
-	yacc makefilemario4.y -d
+proj4: main.o stat.o proj4.o
+	rm -f proj4.out
+	$(CC) $(CFLAGS) main.o stat.o proj4.o -o proj4.out $(LDFLAGS)
 
-#clear:
-	#rm y.tab.c lex.yy.c y.tab.h -f
-	#rm -f main
-asdf: #what
-#command c o m m e n cebeforefirsttarget-  asdf      
-#rm good -adsdf
-asdf:
-asdfasdf
-: sdfgsdafg
-#asdfasdf
-         
+main.o: main.c proj4.h
+	$(CC) -g -c -o $@ $<
+
+proj4.o: proj4.c proj4.h
+	$(CC) -g -c -o $@ $< -lm -fopenmp -pthread
+stat.o: stat.c proj4.h
+	$(CC) -g -c -o $@ $< -mavx -mfma
+
+clear:
+	rm -f *.o
+	rm -f proj4.out

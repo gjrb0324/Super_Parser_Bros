@@ -42,9 +42,11 @@ statement: targetline		// Go to the target line handling
 
 	     /* This is the error handling which usually occurs in the command line */
 	     /* This is the error when using 8 spaces instead of tab */
-commanderrors: EIGHTSPACE {printf("missing separator (did you mean TAB instead of 8 spaces?).\n"); errno="C"; yyerror(errno);}
+commanderrors: EIGHTSPACE {printf("Are you trying to trick me just using eight spaces?\n");}
+	     | EIGHTSPACE prerequisites {printf("missing separator (did you mean TAB instead of 8 spaces?).\n"); errno="C"; yyerror(errno);}
 	     /* When there is no rule to make the target */
 	     | prerequisites {printf("No rule to make target\n"); errno="D"; yyerror(errno);}
+	     | prerequisites '-' prerequisites {printf("No rule to make target\n"); errno="D"; yyerror(errno);}
 	     ;
 
 remarkline: remarks {printf("This line contains remarks.\n");}
@@ -76,7 +78,7 @@ int main(int argc, char **argv){
 
     /* In here, we check whether the correct value came in */
     if ( argc == 1 ){
-    	fprintf(stderr, "Usage: ./main Makefile\n");
+    	fprintf(stderr, "Usage: ./%s <Makefile>\n", argv[0]);
 	exit(1);
     } else if ( strcmp(argv[1], "Makefile") ){
         fprintf(stderr, "Makefile '%s' was not found\n", argv[1]);
