@@ -1,12 +1,19 @@
-main: lex yacc
-	rm -f main
-	cc lex.yy.c y.tab.c -o main -ll -lfl -g
-lex:
-	lex makefile.l
+CC=gcc
+CFLAGS=-g -Wall -std=c99 -fopenmp -pthread
+LDFLAGS=-fopenmp -lm
 
-yacc:
-	yacc makefile.y -d
+proj4: main.o stat.o proj4.o
+	rm -f proj4.out
+	$(CC) $(CFLAGS) main.o stat.o proj4.o -o proj4.out $(LDFLAGS)
+
+main.o: main.c proj4.h
+	$(CC) -g -c -o $@ $<
+
+proj4.o: proj4.c proj4.h
+	$(CC) -g -c -o $@ $< -lm -fopenmp -pthread
+stat.o: stat.c proj4.h
+	$(CC) -g -c -o $@ $< -mavx -mfma
 
 clear:
-	rm y.tab.c lex.yy.c y.tab.h -f
-	rm -f main
+	rm -f *.o
+	rm -f proj4.out
