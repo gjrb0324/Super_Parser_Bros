@@ -104,11 +104,13 @@ int main(int argc, char **argv){
     FILE *fp = fopen(argv[1], "r");
     char target[BUFSIZ]="\0";
     int size; //target's array size
-    char **pre = (char **)malloc(sizeof(char *)*100);
-    for (int i = 0 ; i <100 ; i++)
-        pre[i] = "init";
-    if(pre == NULL)
-        exit(1);
+    char *pre[100];
+    for(int i =0 ; i<100; i++){
+       if( (pre[i]=(char *)malloc(100 *sizeof(char))) == NULL ){
+            fprintf(stderr, "malloc error\n");
+            exit(1);
+        }
+    }
     while ( (line = fgets(buffer,1024, fp)) != NULL) {
         printf("line %u : %s",n,line);
 	if(line[0] == '\n'){
@@ -159,9 +161,6 @@ int main(int argc, char **argv){
                 else if(tok[1] == '@'){
                     strcat(n_line, target);
                 }
-                /*
-                else if(tok[i] == '?'){
-                }*/
             }       
             else 
                 strcat(n_line, tok);
@@ -197,8 +196,10 @@ int main(int argc, char **argv){
         printf("\n");
         n++;
     }
-    free(pre);
-    pre=NULL;
+    for (int i =0 ; i<100; i++){
+        free(pre[i]);
+        pre[i]=NULL;
+    }
     fclose(fp);
     return 0;
 }
