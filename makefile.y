@@ -19,7 +19,6 @@ void yyerror( const char *s);
 %union{
     char *str;
 }
-//%parse-param { char* line }
 %token<str> FNAME REMARK EIGHTSPACE NOTARGETS FLAG
 %type<str> statement macroline /*targeterrors*/ commanderrors remarkline targetline files prerequisites remarks
 %%
@@ -29,7 +28,7 @@ statement: targetline		// Go to the target line handling
 	 | remarkline		// Go to the remark handling
 //	 | targeterrors		// Go to the target error handling
 	 | commanderrors	// Go to the command error handling
-     | macroline
+     	 | macroline
 	 ;
          
 	    /* Now for the error handling which is not ordinary parsing error*/
@@ -43,11 +42,10 @@ statement: targetline		// Go to the target line handling
 macroline: FNAME '=' FLAG {
                             setenv($1,$3,1);
                             }
-        | FNAME '=' files {
+	 | FNAME '=' files {
                             setenv($1,$3,1);
                             }
-
-        ;
+         ;
 
 
 	     /* This is the error handling which usually occurs in the command line */
@@ -55,8 +53,8 @@ macroline: FNAME '=' FLAG {
 commanderrors: EIGHTSPACE {printf("Are you trying to trick me just using eight spaces?\n\n");}
 	     | EIGHTSPACE prerequisites {printf("missing separator (did you mean TAB instead of 8 spaces?).\n"); errno="C"; yyerror(errno);}
 	     /* When there is no rule to make the target */
-	     | prerequisites {printf("No rule to make target\n"); printf("%s\n",$1); errno="D"; yyerror(errno);}
-	     | prerequisites '-' prerequisites {printf("No rule to make target\n"); errno="D"; yyerror(errno);}
+	     | prerequisites {printf("Invalid rule to make target\n"); printf("%s\n",$1); errno="D"; yyerror(errno);}
+	     | prerequisites '-' prerequisites {printf("Invalid rule to make target\n"); errno="D"; yyerror(errno);}
 	     ;
 
 remarkline: remarks {printf("This line contains remarks.\n\n");}
@@ -71,7 +69,7 @@ targetline: files ':' prerequisites {printf("Target line exists with prerequisit
 	  ;
 
 prerequisites: files '|' files
-         | files
+             | files
 	     ;
 
 
@@ -89,10 +87,10 @@ int main(int argc, char **argv){
 
     /* In here, we check whether the correct value came in */
     if ( argc == 1 ){
-    	fprintf(stderr, "Usage: %s Makefile\n",argv[0]);
+    	fprintf(stderr, "Usage: %s <Makefile> \n",argv[0]);
 	exit(1);
     } else if ( (strcmp(argv[1], "Makefile") != 0) && (strcmp(argv[1], "makefile") != 0) ){
-        fprintf(stderr, "Makefile '%s' was not found\n", argv[1]);
+        fprintf(stderr, "Makefile '%s' was not found.\n", argv[1]);
         exit(1);
     }
 
@@ -206,24 +204,27 @@ int main(int argc, char **argv){
 /* General Error Handling + Error correction */
 void yyerror( const char *s){
     
-    if(errno == "X"){
     /* This is the error part when the ordinary parsing fails*/
+    if(errno == "X"){
     printf("Missing separator.\n\n");
     }
     
-    /* This is the part where error correction holds */
+    /* This is the part where error correction(i.e. advice) holds */
     if(errno == "A"){
 	printf("Please check whether you correctly put your command line.\n\n");
     }
 
+    /* When the no targets error occurs */
     if(errno == "B"){
         printf("Please put the target before \":\" line.\n\n");
     }
 
+    /* When using 8 spaces instead of TAB */
     if(errno == "C"){
     	printf("Please use TAB in the beginning of command line.\n\n");
     }
     
+    /* When Invalid Command error occurs */
     if(errno == "D"){
 	printf("Please put the recipie to make the target.\n\n");
     }

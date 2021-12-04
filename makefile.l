@@ -9,16 +9,16 @@ eightspace ^"        "
 newline "\n"
 %%
 [\t ] ;
-{fname} { yylval.str = strdup(yytext); 
-        return FNAME;}
+{fname} 	{yylval.str = strdup(yytext); 
+        	return FNAME;}
 {newline}	return 0;
-. return yytext[0];
-[-]{anyline} {yylval.str = strdup(yytext);
+. 		return yytext[0];
+[-]{anyline} 	{yylval.str = strdup(yytext);
                 return FLAG;}
 [#]{anyline}+		{return REMARK;}
 [\t ][#]{anyline}+	{return REMARK;}
-{eightspace}				{ yylval.str = strdup(yytext);
-					return EIGHTSPACE;}
-^[:]{anychar}				{yylval.str = strdup(yytext);
-					return NOTARGETS;}
+{eightspace}		{yylval.str = strdup(yytext);
+			return EIGHTSPACE;}
+^[:]{anychar}		{yylval.str = strdup(yytext);
+			return NOTARGETS;}
 %%
