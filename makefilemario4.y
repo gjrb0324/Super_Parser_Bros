@@ -78,7 +78,7 @@ int main(int argc, char **argv){
 
     /* In here, we check whether the correct value came in */
     if ( argc == 1 ){
-    	fprintf(stderr, "Usage: ./%s <Makefile>\n", argv[0]);
+    	fprintf(stderr, "Usage: %s <Makefile>\n", argv[0]);
 	exit(1);
     } else if ( strcmp(argv[1], "Makefile") ){
         fprintf(stderr, "Makefile '%s' was not found\n", argv[1]);
