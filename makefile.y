@@ -7,6 +7,12 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+// For coloring the printf results
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_GREEN "\x1b[32m"
+#define ANSI_COLOR_RED "\x1b[31m"
+#define ANSI_COLOR_RESET "\x1b[0m"
+
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
 extern YY_BUFFER_STATE yy_scan_string(const char* str);
 extern YY_BUFFER_STATE yy_scan_buffer(char *, size_t);
@@ -19,59 +25,56 @@ void yyerror( const char *s);
 %union{
     char *str;
 }
-%token<str> FNAME REMARK EIGHTSPACE NOTARGETS FLAG
-%type<str> statement macroline /*targeterrors*/ commanderrors remarkline targetline files prerequisites remarks
+%token<str> FNAME REMARK SPACE EIGHTSPACE NOTARGETS FLAG
+%type<str> statement macroline spacerrors commanderrors remarkline targetline files prerequisites remarks
 %%
 
 // Valid state handling
 statement: targetline		// Go to the target line handling
 	 | remarkline		// Go to the remark handling
-//	 | targeterrors		// Go to the target error handling
+	 | spacerrors		// Go to the no rule warning handling
 	 | commanderrors	// Go to the command error handling
-     	 | macroline
+     	 | macroline		// For the macro line handling
 	 ;
-         
-	    /* Now for the error handling which is not ordinary parsing error*/
-	    /* In here, it handles the error usually occurs in the target line */
-	    /* This is commands commence before first target error */
-//targeterrors: asdf {printf("commands commence before first target.\n"); errno="A"; yyerror(errno);}
-	    /* Recursive variable 'xxx' references itself (eventually). */
-	    /* Unterminated variable reference. */
-	    /* insufficient arguments to function 'xxx'. */
 
-macroline: FNAME '=' FLAG {
-                            setenv($1,$3,1);
-                            }
-	 | FNAME '=' files {
-                            setenv($1,$3,1);
-                            }
+macroline: FNAME '=' FLAG  {setenv($1,$3,1);}
+	 | FNAME '=' files {setenv($1,$3,1);}
          ;
 
+	  /* Now for the error handling which is not ordinary parsing error*/
+	  /* In here, it handles the error usually occurs when blanck appears */
+	  /* This is a substitue of No rule to make target error */
+spacerrors: SPACE {printf(ANSI_COLOR_MAGENTA "Parser warning: " ANSI_COLOR_RESET); printf("no rule or neglected space to make target.\n"); errno="A", yyerror(errno);}
+	  | SPACE prerequisites {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("invalid rule to make target "); printf("\"%s\"\n",$1); errno="D"; yyerror(errno);}
+	  | EIGHTSPACE {printf(ANSI_COLOR_MAGENTA "Parser warning: " ANSI_COLOR_RESET); printf("no rule or neglected space to make target.\n"); errno="A", yyerror(errno);}
+	  /* This is the error when using 8 spaces instead of tab */
+	  | EIGHTSPACE prerequisites {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("missing separator (did you mean TAB instead of 8 spaces?).\n"); errno="C"; yyerror(errno);}
+	  ;
 
 	     /* This is the error handling which usually occurs in the command line */
-	     /* This is the error when using 8 spaces instead of tab */
-commanderrors: EIGHTSPACE {printf("Are you trying to trick me just using eight spaces?\n\n");}
-	     | EIGHTSPACE prerequisites {printf("missing separator (did you mean TAB instead of 8 spaces?).\n"); errno="C"; yyerror(errno);}
 	     /* When there is no rule to make the target */
-	     | prerequisites {printf("Invalid rule to make target\n"); printf("%s\n",$1); errno="D"; yyerror(errno);}
-	     | prerequisites '-' prerequisites {printf("Invalid rule to make target\n"); errno="D"; yyerror(errno);}
+commanderrors: prerequisites {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("invalid rule to make target "); printf("\"%s\"\n",$1); errno="D"; yyerror(errno);}
+	     | prerequisites '-' prerequisites {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("invalid rule to make target\n"); errno="D"; yyerror(errno);}
 	     ;
 
 remarkline: remarks {printf("This line contains remarks.\n\n");}
 	   | targetline remarks {printf("Target line contains remarks.\n\n");}
+	   | SPACE remarks {printf("This line contains remarks.\n\n");}
+	   | EIGHTSPACE remarks {printf("This line contains remarks.\n\n");}
 	   ;
 
 targetline: files ':' prerequisites {printf("Target line exists with prerequisite(s).\n\n");}
 	  | files ':' {printf("Target line is valid.\n\n");}
-	  /* No targets errori */
-	  | ':' files {printf("No targets.\n"); errno="B"; yyerror(errno);}
-	  | ':' {printf("No targets.\n"); errno= "B", yyerror(errno);}
+	  /* No targets error */
+	  | ':' files {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("No targets.\n"); errno="B"; yyerror(errno);}
+	  | ':' {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("No targets.\n"); errno= "B", yyerror(errno);}
+	  | SPACE ':' {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("No targets.\n"); errno= "B", yyerror(errno);}
+	  | SPACE ':' files {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("No targets.\n"); errno="B"; yyerror(errno);}
 	  ;
 
 prerequisites: files '|' files
              | files
 	     ;
-
 
 files: FNAME files
      | FNAME
@@ -80,6 +83,7 @@ files: FNAME files
 remarks: REMARK remarks
        | REMARK
        ;
+
 %%
 int main(int argc, char **argv){
     char buffer[1024];
@@ -210,23 +214,28 @@ void yyerror( const char *s){
     }
     
     /* This is the part where error correction(i.e. advice) holds */
+    /* No rules or no spaces errors */
     if(errno == "A"){
-	printf("Please check whether you correctly put your command line.\n\n");
+    	printf(ANSI_COLOR_GREEN "Advice: " ANSI_COLOR_RESET);
+	printf("please delete the neglected spaces and put a valid commands or blank.\n\n");
     }
 
     /* When the no targets error occurs */
     if(errno == "B"){
-        printf("Please put the target before \":\" line.\n\n");
+    	printf(ANSI_COLOR_GREEN "Advice: " ANSI_COLOR_RESET);
+        printf("please put the target before \":\" line.\n\n");
     }
 
     /* When using 8 spaces instead of TAB */
     if(errno == "C"){
-    	printf("Please use TAB in the beginning of command line.\n\n");
+    	printf(ANSI_COLOR_GREEN "Advice: " ANSI_COLOR_RESET);
+    	printf("please use TAB in the beginning of command line.\n\n");
     }
     
     /* When Invalid Command error occurs */
     if(errno == "D"){
-	printf("Please put the recipie to make the target.\n\n");
+    	printf(ANSI_COLOR_GREEN "Advice: " ANSI_COLOR_RESET);
+	printf("please put the recipie to make the target.\n\n");
     }
     errno = "X";
 }
