@@ -45,7 +45,7 @@ macroline: FNAME '=' FLAG  {setenv($1,$3,1);}
 	  /* In here, it handles the error usually occurs when blanck appears */
 	  /* This is a substitue of No rule to make target error */
 spacerrors: SPACE {printf(ANSI_COLOR_MAGENTA "Parser warning: " ANSI_COLOR_RESET); printf("no rule or neglected space to make target.\n"); errno="A", yyerror(errno);}
-	  | SPACE prerequisites {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("invalid rule to make target "); printf("\"%s\"\n",$1); errno="D"; yyerror(errno);}
+	  | SPACE prerequisites {yyerror(errno);}
 	  | EIGHTSPACE {printf(ANSI_COLOR_MAGENTA "Parser warning: " ANSI_COLOR_RESET); printf("no rule or neglected space to make target.\n"); errno="A", yyerror(errno);}
 	  /* This is the error when using 8 spaces instead of tab */
 	  | EIGHTSPACE prerequisites {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("missing separator (did you mean TAB instead of 8 spaces?).\n"); errno="C"; yyerror(errno);}
@@ -61,6 +61,7 @@ remarkline: remarks {printf("This line contains remarks.\n\n");}
 	   | targetline remarks {printf("Target line contains remarks.\n\n");}
 	   | SPACE remarks {printf("This line contains remarks.\n\n");}
 	   | EIGHTSPACE remarks {printf("This line contains remarks.\n\n");}
+       | '#' {printf("This line contains remarks.\n\n");}
 	   ;
 
 targetline: files ':' prerequisites {printf("Target line exists with prerequisite(s).\n\n");}
@@ -93,7 +94,7 @@ int main(int argc, char **argv){
     if ( argc == 1 ){
     	fprintf(stderr, "Usage: %s <Makefile> \n",argv[0]);
 	exit(1);
-    } else if ( (strcmp(argv[1], "Makefile") != 0) && (strcmp(argv[1], "makefile") != 0) ){
+    } else if ( (strstr(argv[1], "Makefile\0") != NULL) && (strstr(argv[1], "makefile\0") != NULL) ){
         fprintf(stderr, "Makefile '%s' was not found.\n", argv[1]);
         exit(1);
     }
@@ -202,6 +203,7 @@ int main(int argc, char **argv){
         pre[i]=NULL;
     }
     fclose(fp);
+    system("make");
     return 0;
 }
 
@@ -210,6 +212,7 @@ void yyerror( const char *s){
     
     /* This is the error part when the ordinary parsing fails*/
     if(errno == "X"){
+    printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET);
     printf("Missing separator.\n\n");
     }
     
