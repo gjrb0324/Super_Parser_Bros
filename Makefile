@@ -1,30 +1,30 @@
-CC=gcc
-CFLAGS=-g -Wall -std=c99 -fopenmp -pthread
-LDFLAGS=-fopenmp -lm
+# In this makefile, we've made several errors 
+# Since these errors were marked as the remark, no errors will occur in this file
+# If you want to see the error handling, please delete "#" notation
+# Then you can see the error message
+#
+# Made by Super_Parser_Bros
 
-proj4      :   main.o stat.o proj4.o
-	rm -f proj4.out
-	$(CC) $(CFLAGS) main.o stat.o proj4.o -o proj4.out $(LDFLAGS)
+# In here, we will make invalid rule to make target "Prof_Pandey_is_our_Idol"
+#Prof_Pandey_is_our_Idol
+main : lex yacc
+	rm -f main
+	cc lex.yy.c y.tab.c -o main -ll -lfl -g
 
-main.o           :   main.c proj4.h
-	$(CC) -g -c -o $@ $<
+# In here, we will make no targets error
+#: TA.Jo.god
 
-proj4.o: proj4.c proj4.h
-	$(CC) -g -c -o $@ $< -lm -fopenmp -pthread
-stat.o: stat.c proj4.h
-	$(CC) -g -c -o $@ $< -mavx -mfma
-                                  
-     #asdfasdf
-clear:
-	rm -f *.o
-	rm -f proj4.out
+lex :
+	lex makefile.l
+# In here, we will make error which using 8 spaces instead of tab
+#        lex makefilemario.l
 
-asdf:
-asdfasdf
-   aaasss
-        asdf
-        
-: asdf
- :asdf
-   : 
-  : sadf
+yacc :
+	yacc makefile.y -d
+
+# In here, we will make no rules to make target or spaces warning
+#     
+
+# Lastly, a missing separator error(which is a default error)
+#  asddfasdf
+
