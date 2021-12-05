@@ -12,7 +12,7 @@ main : lex yacc
 	cc lex.yy.c y.tab.c -o main -ll -lfl -g
 
 # In here, we will make no targets error
-#: TA.Jo.god
+: TA.Jo.god
 
 lex :
 	lex makefile.l

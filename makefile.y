@@ -61,6 +61,7 @@ remarkline: remarks {printf("This line contains remarks.\n\n");}
 	   | targetline remarks {printf("Target line contains remarks.\n\n");}
 	   | SPACE remarks {printf("This line contains remarks.\n\n");}
 	   | EIGHTSPACE remarks {printf("This line contains remarks.\n\n");}
+	   | '#' {printf("This line contains remarks.\n\n");}
 	   ;
 
 targetline: files ':' prerequisites {printf("Target line exists with prerequisite(s).\n\n");}
