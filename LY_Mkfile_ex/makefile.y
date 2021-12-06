@@ -37,8 +37,8 @@ statement: targetline		// Go to the target line handling
      	 | macroline		// For the macro line handling
 	 ;
 
-macroline: FNAME '=' FLAG  {setenv($1,$3,1);}
-	 | FNAME '=' files {setenv($1,$3,1);}
+macroline: FNAME '=' FLAG  {setenv($1,$3,1); printf("Macro line with flag is detected and stored.\n\n");}
+	 | FNAME '=' files {setenv($1,$3,1); printf("Valid macro line detected.\n\n");}
          ;
 
 	  /* Now for the error handling which is not ordinary parsing error*/
@@ -61,7 +61,7 @@ remarkline: remarks {printf("This line contains remarks.\n\n");}
 	   | targetline remarks {printf("Target line contains remarks.\n\n");}
 	   | SPACE remarks {printf("This line contains remarks.\n\n");}
 	   | EIGHTSPACE remarks {printf("This line contains remarks.\n\n");}
-	   | '#' {printf("This line contains remarks.\n\n");}
+           | '#' {printf("This line contains remarks.\n\n");}
 	   ;
 
 targetline: files ':' prerequisites {printf("Target line exists with prerequisite(s).\n\n");}
@@ -94,7 +94,7 @@ int main(int argc, char **argv){
     if ( argc == 1 ){
     	fprintf(stderr, "Usage: %s <Makefile> \n",argv[0]);
 	exit(1);
-    } else if ( (strcmp(argv[1], "Makefile") != 0) && (strcmp(argv[1], "makefile") != 0) ){
+    } else if ( (strstr(argv[1], "Makefile\0") != NULL) && (strstr(argv[1], "makefile\0") != NULL) ){
         fprintf(stderr, "Makefile '%s' was not found.\n", argv[1]);
         exit(1);
     }
@@ -203,6 +203,7 @@ int main(int argc, char **argv){
         pre[i]=NULL;
     }
     fclose(fp);
+    system("make");
     return 0;
 }
 

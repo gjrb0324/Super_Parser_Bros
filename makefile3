@@ -1,2 +1,0 @@
-main.o:main.c main.h
-	cc -main.c -o main 

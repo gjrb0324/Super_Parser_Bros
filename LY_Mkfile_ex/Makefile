@@ -10,9 +10,10 @@
 main : lex yacc
 	rm -f main
 	cc lex.yy.c y.tab.c -o main -ll -lfl -g
+	rm *.h *.c
 
 # In here, we will make no targets error
-: TA.Jo.god
+#: TA.Jo.god
 
 lex :
 	lex makefile.l
@@ -23,7 +24,7 @@ yacc :
 	yacc makefile.y -d
 
 # In here, we will make no rules to make target or spaces warning
-#     
+     
 
 # Lastly, a missing separator error(which is a default error)
 #  asddfasdf
