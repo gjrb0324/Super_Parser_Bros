@@ -1,6 +1,4 @@
-*.c
 *.yy
-*.h
 *.o
 *.exe
 *.Makefile
