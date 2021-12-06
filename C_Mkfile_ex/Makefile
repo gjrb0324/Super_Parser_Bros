@@ -1,3 +1,7 @@
+# Owned by Super_Parser_Bros
+#
+# To check the error handling, you may add # in the below macro line
+# such as # CC= gcc
 CC=gcc
 CFLAGS=-g -Wall -std=c99 -fopenmp -pthread
 LDFLAGS=-fopenmp -lm
