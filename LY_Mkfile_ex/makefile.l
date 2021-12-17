@@ -3,7 +3,6 @@
 #include <string.h>
 %}
 fname [a-z0-9A-Z][a-zA-Z0-9_.]+
-anychar [a-z0-9A-Z]+
 anyline [a-z0-9A-Z_.: -=]+
 newline "\n"
 eightspace ^"        "
@@ -19,8 +18,5 @@ space ^[ ]+
 [#]{anyline}+		{return REMARK;}
 [\t ][#]{anyline}+	{return REMARK;}
 {eightspace}		{return EIGHTSPACE;}
-^[:]{anychar}		{yylval.str = strdup(yytext);
-			return NOTARGETS;}
-
 {space}			{return SPACE;}
 %%

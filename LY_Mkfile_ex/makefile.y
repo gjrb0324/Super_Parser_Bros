@@ -15,7 +15,7 @@
 
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
 extern YY_BUFFER_STATE yy_scan_string(const char* str);
-extern YY_BUFFER_STATE yy_scan_buffer(char *, size_t);
+//extern YY_BUFFER_STATE yy_scan_buffer(char *, size_t);
 extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
 extern void yy_switch_to_buffer(YY_BUFFER_STATE buffer);
 int yylex();
@@ -25,7 +25,7 @@ void yyerror( const char *s);
 %union{
     char *str;
 }
-%token<str> FNAME REMARK SPACE EIGHTSPACE NOTARGETS FLAG
+%token<str> FNAME REMARK SPACE EIGHTSPACE FLAG
 %type<str> statement macroline spacerrors commanderrors remarkline targetline files prerequisites remarks
 %%
 
@@ -37,15 +37,15 @@ statement: targetline		// Go to the target line handling
      	 | macroline		// For the macro line handling
 	 ;
 
-macroline: FNAME '=' FLAG  {setenv($1,$3,1);}
-	 | FNAME '=' files {setenv($1,$3,1);}
+macroline: FNAME '=' FLAG  {setenv($1,$3,1); printf("Macro line with flag is detected and stored.\n\n");}
+	 | FNAME '=' files {setenv($1,$3,1); printf("Valid macro line detected and stored.\n\n");}
          ;
 
 	  /* Now for the error handling which is not ordinary parsing error*/
 	  /* In here, it handles the error usually occurs when blanck appears */
 	  /* This is a substitue of No rule to make target error */
 spacerrors: SPACE {printf(ANSI_COLOR_MAGENTA "Parser warning: " ANSI_COLOR_RESET); printf("no rule or neglected space to make target.\n"); errno="A", yyerror(errno);}
-	  | SPACE prerequisites {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("invalid rule to make target "); printf("\"%s\"\n",$1); errno="D"; yyerror(errno);}
+	  | SPACE prerequisites {yyerror(errno);}
 	  | EIGHTSPACE {printf(ANSI_COLOR_MAGENTA "Parser warning: " ANSI_COLOR_RESET); printf("no rule or neglected space to make target.\n"); errno="A", yyerror(errno);}
 	  /* This is the error when using 8 spaces instead of tab */
 	  | EIGHTSPACE prerequisites {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("missing separator (did you mean TAB instead of 8 spaces?).\n"); errno="C"; yyerror(errno);}
@@ -59,17 +59,21 @@ commanderrors: prerequisites {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_
 
 remarkline: remarks {printf("This line contains remarks.\n\n");}
 	   | targetline remarks {printf("Target line contains remarks.\n\n");}
+	   | targetline '#' {printf("Target line contains remarks.\n\n");}
 	   | SPACE remarks {printf("This line contains remarks.\n\n");}
+	   | SPACE '#' {printf("This line contains remarks.\n\n");}
 	   | EIGHTSPACE remarks {printf("This line contains remarks.\n\n");}
+	   | EIGHTSPACE '#' {printf("This line contains remarks.\n\n");}
+           | '#' {printf("This line contains remarks.\n\n");}
 	   ;
 
 targetline: files ':' prerequisites {printf("Target line exists with prerequisite(s).\n\n");}
 	  | files ':' {printf("Target line is valid.\n\n");}
 	  /* No targets error */
-	  | ':' files {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("No targets.\n"); errno="B"; yyerror(errno);}
-	  | ':' {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("No targets.\n"); errno= "B", yyerror(errno);}
-	  | SPACE ':' {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("No targets.\n"); errno= "B", yyerror(errno);}
-	  | SPACE ':' files {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("No targets.\n"); errno="B"; yyerror(errno);}
+	  | ':' files {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("no targets.\n"); errno="B"; yyerror(errno);}
+	  | ':' {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("no targets.\n"); errno= "B", yyerror(errno);}
+	  | SPACE ':' {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("no targets.\n"); errno= "B", yyerror(errno);}
+	  | SPACE ':' files {printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET); printf("no targets.\n"); errno="B"; yyerror(errno);}
 	  ;
 
 prerequisites: files '|' files
@@ -85,22 +89,39 @@ remarks: REMARK remarks
        ;
 
 %%
+void free_pre(char **pre);
+
 int main(int argc, char **argv){
     char buffer[1024];
     char *line;
 
+    char filename[50];
+
+    printf("=========Makefile_Parser=========\n");
+    printf("Made by Super_Parser_Bros(Team 2)\n");
+    printf("20175003 SHK, 20195191 HG\n");
+    printf("=================================\n");
+    printf("\n");
+    
+    printf("Usage: %s <Makefile> \n", argv[0]);
+    printf("Please input a valid Makefile to parse: ");    
+    scanf("%s", filename);
+  
+    printf("\n");
+
     /* In here, we check whether the correct value came in */
-    if ( argc == 1 ){
-    	fprintf(stderr, "Usage: %s <Makefile> \n",argv[0]);
-	exit(1);
-    } else if ( (strcmp(argv[1], "Makefile") != 0) && (strcmp(argv[1], "makefile") != 0) ){
-        fprintf(stderr, "Makefile '%s' was not found.\n", argv[1]);
+    if ( (strcmp(filename, "Makefile") != 0) && (strcmp(filename, "makefile") != 0) ){
+        fprintf(stderr, "Makefile '%s' was not found.\n", filename);
         exit(1);
     }
+    
+    
+    printf("=================================\n");
+    printf("\n");
 
     /* Now it starts the parsing */
     unsigned int n = 1; 
-    FILE *fp = fopen(argv[1], "r");
+    FILE *fp = fopen(filename, "r");
     char target[BUFSIZ]="\0";
     int size; //target's array size
     char *pre[100];
@@ -115,7 +136,8 @@ int main(int argc, char **argv){
 		n++;
 		continue;
 	}
-    printf("line %u : %s",n,line);
+    	printf("line %u : %s",n,line);
+	
 	if(line[0] == '\t'){
         char n_line[BUFSIZ]="\0";
         line = strtok(line, "\t");
@@ -137,6 +159,11 @@ int main(int argc, char **argv){
                     }
                     
                     newtok[n] = '\0';
+		    if(getenv(newtok) == NULL){
+		        printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET);
+		    	printf("No macro variable matched with name %s. It will be set to YOSHI\n", newtok);
+			setenv(newtok, "YOSHI", 0);
+			}
                     strcat(n_line, getenv(newtok));
                 }
                 //Current target
@@ -197,20 +224,30 @@ int main(int argc, char **argv){
         printf("\n");
         n++;
     }
+    free_pre(pre);
+    fclose(fp);
+
+    printf("=================================\n");
+    printf("Actual \"make\" command results\n");
+    printf("=================================\n");
+
+    system("make");
+    return 0;
+}
+void free_pre(char **pre){
+
     for (int i =0 ; i<100; i++){
         free(pre[i]);
         pre[i]=NULL;
     }
-    fclose(fp);
-    return 0;
 }
-
 /* General Error Handling + Error correction */
 void yyerror( const char *s){
     
     /* This is the error part when the ordinary parsing fails*/
     if(errno == "X"){
-    printf("Missing separator.\n\n");
+    printf(ANSI_COLOR_RED "Parser error: " ANSI_COLOR_RESET);
+    printf("missing separator.\n\n");
     }
     
     /* This is the part where error correction(i.e. advice) holds */
@@ -223,19 +260,19 @@ void yyerror( const char *s){
     /* When the no targets error occurs */
     if(errno == "B"){
     	printf(ANSI_COLOR_GREEN "Advice: " ANSI_COLOR_RESET);
-        printf("please put the target before \":\" line.\n\n");
+        printf("please put the target before \":\".\n\n");
     }
 
     /* When using 8 spaces instead of TAB */
     if(errno == "C"){
     	printf(ANSI_COLOR_GREEN "Advice: " ANSI_COLOR_RESET);
-    	printf("please use TAB in the beginning of command line.\n\n");
+    	printf("please use TAB in the beginning of the command line.\n\n");
     }
     
     /* When Invalid Command error occurs */
     if(errno == "D"){
     	printf(ANSI_COLOR_GREEN "Advice: " ANSI_COLOR_RESET);
-	printf("please put the recipie to make the target.\n\n");
+	printf("please put the recipe to make the target.\n\n");
     }
     errno = "X";
 }
